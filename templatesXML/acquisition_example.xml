@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<auto_C3D_checker_input xmlns:xsi="http://www.w3.org/2001/XMLSchema">	  
+   <Subjects>
+	  <SubjectCodes>ACLR11 ACLR28 CTRL09</SubjectCodes>
+      <InstrumentedLeg>L R L</InstrumentedLeg>
+   </Subjects>
+   
+   <MarkersProtocol>
+      <MarkersSetStaticTrials>C7 CLAV T10 RPSI LPSI RASI LASI rthigh_2 rthigh_4 rthigh_primary_axis_7 rthigh_2nd_axis_9 lthigh_2 lthigh_4 lthigh_primary_axis_7 lthigh_2nd_axis_9 rshank_origin_1 rshank_4 rshank_primary_axis_7 rshank_2nd_axis_9 lshank_origin_1 lshank_4 lshank_primary_axis_7 lshank_2nd_axis_9 RCAL RMT1 RMT5 LCAL LMT1 LMT5</MarkersSetStaticTrials>
+      <MarkersSetDynamicTrials>C7 CLAV T10 RPSI LPSI RASI LASI rthigh_2 rthigh_4 rthigh_primary_axis_7 rthigh_2nd_axis_9 lthigh_2 lthigh_4 lthigh_primary_axis_7 lthigh_2nd_axis_9 rshank_origin_1 rshank_4 rshank_primary_axis_7 rshank_2nd_axis_9 lshank_origin_1 lshank_4 lshank_primary_axis_7 lshank_2nd_axis_9 RCAL RMT1 RMT5 LCAL LMT1 LMT5</MarkersSetDynamicTrials>
+	  <RightFootMarkers>RCAL RMT1 RMT5</RightFootMarkers>
+	  <LeftFootMarkers>LCAL LMT1 LMT5</LeftFootMarkers>
+   </MarkersProtocol>
+   
+   <EMGs>
+      <OriginalChannels>EMG1 EMG2 EMG3 EMG4 EMG5 EMG6 EMG7 EMG8</OriginalChannels>
+	  <RenamedChannels>EMG1_SM EMG2_BF EMG3_RF EMG4_TFL EMG5_VM EMG6_VL EMG7_MG EMG8_LG</RenamedChannels><!--Use these in case you want to rename your EMG channels in the c3d.-->
+	  <EMGDelay>0.2</EMGDelay><!--0.2 sec is the MOtoNMS default value for electromechanical + hardware delay.-->
+   </EMGs>
+   
+   <ScriptSettings>
+      <thresholdFP>20</thresholdFP><!--20N FP threshold, only change if encountering errors.-->
+	  <analysisWindow>10</analysisWindow><!--Extra frames for analysis window.-->
+	  <paddingFrames>100</paddingFrames>
+   </ScriptSettings>
+</auto_C3D_checker_input>
