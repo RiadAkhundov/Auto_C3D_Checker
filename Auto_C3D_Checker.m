@@ -111,12 +111,12 @@ for s = 1:length(subjectFolders)
     end
 
     if runEMGClass
-        dirOutput_Figures = [subjectFolders(s).folder, '\', subjectFolders(s).name, '\EMG Figures']; %Make Figure folder at script location
+        dirOutput_Figures = [subjectFolders(s).folder, '\', subjectFolders(s).name, '\EMG Figures\']; %Make Figure folder at script location
         mkdir(dirOutput_Figures);
-        dirOutput_Figures_Good = [dirOutput_Figures, '\1_Good']; mkdir(dirOutput_Figures_Good);
-        dirOutput_Figures_Noisy = [dirOutput_Figures, '\2_Noisy']; mkdir(dirOutput_Figures_Noisy);
-        dirOutput_Figures_Bad = [dirOutput_Figures, '\3_Bad']; mkdir(dirOutput_Figures_Bad);
-        dirOutput_Figures_Missing = [dirOutput_Figures, '\4_Missing']; mkdir(dirOutput_Figures_Missing);
+        dirOutput_Figures_Good = [dirOutput_Figures, '1_Good']; mkdir(dirOutput_Figures_Good);
+        dirOutput_Figures_Noisy = [dirOutput_Figures, '2_Noisy']; mkdir(dirOutput_Figures_Noisy);
+        dirOutput_Figures_Bad = [dirOutput_Figures, '3_Bad']; mkdir(dirOutput_Figures_Bad);
+        dirOutput_Figures_Missing = [dirOutput_Figures, '4_Missing']; mkdir(dirOutput_Figures_Missing);
     end
     
     currentTrials = dir([subjectFolders(s).folder, '\', subjectFolders(s).name, '\*.c3d']); %Get subject trials
@@ -449,7 +449,7 @@ for s = 1:length(subjectFolders)
         
         
                         % Save image
-                        print ([dirOutput_Figures, '\', currentTrials(t).name(1:end-4), '_', emgNamesOriginal{i}, '.jpg'], '-djpeg', '-r100');
+                        print ([dirOutput_Figures, currentTrials(t).name(1:end-4), '_', emgNamesOriginal{i}, '.jpg'], '-djpeg', '-r100');
             
                         close(f)
                     else                        
@@ -569,7 +569,9 @@ for s = 1:length(subjectFolders)
 
 
     %% 6) Move Usable Participant Data Into Unified InputData Folder
-    movefile(c3dChosenFilesPath,fileparts(baseFolderPath));
+    movefile(c3dChosenFilesPath,fileparts(baseFolderPath)); %InputData
+
+    movefile(dirOutput_Figures,[fileparts(baseFolderPath), '\InputData\', subjectFolders(s).name]); %EMG Figures
     
     clear results chosenFP classifications imds labels
 end %Subjects
