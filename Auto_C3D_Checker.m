@@ -3,22 +3,20 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Riad Akhundov <r.akhundov@griffith.edu.au> and/or <Riad.Akhundov@uon.edu.au>
 
-%Main script for... 
+%Main script for automatic .c3d evaluation and modification for the purpose of neuromusculoskeletal modeling. 
 
 %%%Requirements: 
 %1) MATLAB 2019b or newer (made with MATLAB version 2023a)
 %2) Deep Learning Toolbox (introduced in version 2018a)
 %3) Parallel Computing Toolbox (also called Distributed Computing Toolbox)
 
-%Version: v0.23.08.14
+%Version: v0.23.08.17
 
 %%%ToDo:
 %!!! include naming of fp channels in xml !!!
-%!!! make user guide !!!
 %!!! make GUI !!!
 
 %%%ToDo Later:
-% Find MotionDirection through foot orientation through majority of trial
 % Combine with EMG class to excitation script 
 % Add Manual ReNaming script
 
@@ -44,7 +42,7 @@ diary on
 
 %User inputs - Paths to base folder, template .xml, etc.
 baseFolderPath = [pwd, '\Sample Data\Base Folder']; %Base folder containing subjects subfolders with .c3d files
-xmlTemplate = [pwd, '\templatesXML\acquisition_example.xml']; %.xml containing acquisition information
+xmlTemplate = [pwd, '\templatesXML\autoC3Dsetup_example.xml']; %.xml containing acquisition information
 overwriteEMGNames = true;
 runEMGClass = true;
 %!!! add user inputable paths with GUI
@@ -473,7 +471,7 @@ for s = 1:length(subjectFolders)
             
             %Classify images
             [labels, ~] = classify(combo_xception, imds); %The classification line
-            % [labels, percentages] = classify(combo_xception, imds);
+            %%% [labels, percentages] = classify(combo_xception, imds);
             %%% percentages_round = floor(percentages*10000)/100;      
             
             % Saving Results by Sorting Images
@@ -490,11 +488,18 @@ for s = 1:length(subjectFolders)
             %Save label cell array
             labels = double(labels');
             for em = 1:length(emgNamesOriginal)    
-                classifications{t,em} = labels(1,em);
-            end
+                if labels(1,em) == 1
+                    classifications{t,em} = 'Good';
+                elseif labels(1,em) == 2
+                    classifications{t,em} = 'Usable';
+                elseif labels(1,em) == 3
+                    classifications{t,em} = 'Noise';
+                end %Labels 
+            end %EMG
     
             %Update trial usability with EMG results
-            numUsableEMG = sum(labels<3)/length(labels)*100;     
+            numUsableEMG = sum(labels<3)/length(labels)*100;  
+            classifications{t,length(emgNamesOriginal)+1} = numUsableEMG; %Save percentage of usable EMG
             if numUsableEMG < 75 && strcmp(chosenFP{t,4},'Calibration')  
                 chosenFP{t,4} = 'Execution';
             end
@@ -513,7 +518,7 @@ for s = 1:length(subjectFolders)
     
     %Add all headers to results cell array   
     if runEMGClass
-        results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}], emgNamesOriginal',...
+        results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}], [emgNamesOriginal', {'Percentage Usable EMG'}],...
             {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, classifications, chosenFP]];
     else
         results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}],...

@@ -6,7 +6,6 @@
    </Subjects>
    
    <MarkersProtocol>
-      <MarkersSetStaticTrials>C7 CLAV T10 RPSI LPSI RASI LASI rthigh_2 rthigh_4 rthigh_primary_axis_7 rthigh_2nd_axis_9 lthigh_2 lthigh_4 lthigh_primary_axis_7 lthigh_2nd_axis_9 rshank_origin_1 rshank_4 rshank_primary_axis_7 rshank_2nd_axis_9 lshank_origin_1 lshank_4 lshank_primary_axis_7 lshank_2nd_axis_9 RCAL RMT1 RMT5 LCAL LMT1 LMT5</MarkersSetStaticTrials>
       <MarkersSetDynamicTrials>C7 CLAV T10 RPSI LPSI RASI LASI rthigh_2 rthigh_4 rthigh_primary_axis_7 rthigh_2nd_axis_9 lthigh_2 lthigh_4 lthigh_primary_axis_7 lthigh_2nd_axis_9 rshank_origin_1 rshank_4 rshank_primary_axis_7 rshank_2nd_axis_9 lshank_origin_1 lshank_4 lshank_primary_axis_7 lshank_2nd_axis_9 RCAL RMT1 RMT5 LCAL LMT1 LMT5</MarkersSetDynamicTrials>
 	  <RightFootMarkers>RCAL RMT1 RMT5</RightFootMarkers>
 	  <LeftFootMarkers>LCAL LMT1 LMT5</LeftFootMarkers>
