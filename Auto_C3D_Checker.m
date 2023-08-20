@@ -10,7 +10,7 @@
 %2) Deep Learning Toolbox (introduced in version 2018a)
 %3) Parallel Computing Toolbox (also called Distributed Computing Toolbox)
 
-%Version: v0.23.08.17
+%Version: v0.23.08.20
 
 %%%ToDo:
 %!!! include naming of fp channels in xml !!!
@@ -74,9 +74,8 @@ importantMarkersDynamic = split(tree.MarkersProtocol.MarkersSetDynamicTrials);
 
 footMarkersRight = split(tree.MarkersProtocol.RightFootMarkers);
 footMarkersLeft = split(tree.MarkersProtocol.LeftFootMarkers);
-pelvisMarkers = split(tree.MarkersProtocol.PelvisMarkers);
-pelvisMarkerFront = pelvisMarkers{1};
-pelvisMarkerBack = pelvisMarkers{2};
+pelvisMarkerFront = split(tree.MarkersProtocol.AnteriorPelvisMarker);
+pelvisMarkerBack = split(tree.MarkersProtocol.PosteriorPelvisMarker);
 
 emgNamesOriginal = split(tree.EMGs.OriginalChannels);
 emgNamesAdjusted = split(tree.EMGs.RenamedChannels);
@@ -87,7 +86,8 @@ analysisWindow = str2double(tree.ScriptSettings.analysisWindow);
 padNum = str2double(tree.ScriptSettings.paddingFrames); %How many frames to pad .c3d with
 
 excelTemplateFilePath = [pwd, '\template.xlsx']; %Excel results prep
-excelFilePath = [baseFolderPath, '\Results.xlsx'];
+[~, baseFolderName] = fileparts(baseFolderPath);
+excelFilePath = [baseFolderPath, '\Results_', baseFolderName, '_', currentDateTime, '.xlsx'];
 copyfile(excelTemplateFilePath, excelFilePath);
 excelEmptyArray = cell(1000,100);
 
@@ -192,12 +192,6 @@ for s = 1:length(subjectFolders)
             %Filter/adjust data before calculating tStrike_fpFrames and tOff                      
             filtFPData = movmean(currentFPData, 10); %Moving average filter | moving window of 10 works well
             filtFPData = filtFPData + prctile(abs(filtFPData),1); %Remove zero offset | prctile works better than min
-              
-            %%% figure; 
-            %%% hold on;
-            %%% plot(abs(currentFPData));
-            %%% plot(abs(filtFPData));
-            %%% plot(abs(filtFPData - prctile(abs(filtFPData),1)));
 
             %Check FP for footstrike and if footstrike is present get the first frame
             tStrike_fpFrames{fp} = (find(abs(filtFPData)>thresholdFP,1)); %Footstrike on FP in FP frame rate
@@ -518,7 +512,7 @@ for s = 1:length(subjectFolders)
 
         %% 5) Find Motion Direction
         %Delete zero rows in pelvis markers
-        currentData = [markers.(pelvisMarkerFront), markers.(pelvisMarkerBack)];
+        currentData = [markers.(pelvisMarkerFront{1}), markers.(pelvisMarkerBack{1})];
         currentData(~all(currentData,2), :) = []; %Both markers need to be present at the same time       
         currentDataFront = currentData(:, 1:3);
         currentDataBack = currentData(:, 4:6);
@@ -526,7 +520,7 @@ for s = 1:length(subjectFolders)
         motionDirectionMatrix = currentDataFront - currentDataBack;
         
         [~,idx_maxVal] = max(abs(motionDirectionMatrix),[],2);
-        pelvisMotionAxis = round(mean(idx_maxVal));
+        [~, pelvisMotionAxis] = max([sum(idx_maxVal==1), sum(idx_maxVal==2), sum(idx_maxVal==3)]);
         pelvisMotionSign = round(mean(sign(motionDirectionMatrix(:,pelvisMotionAxis))));
 
         if pelvisMotionAxis == labMotionAxis
@@ -543,7 +537,8 @@ for s = 1:length(subjectFolders)
             end
         end %Motion direction
         
-        btkCloseAcquisition(h); %Close trial   
+        btkCloseAcquisition(h); %Close trial
+        clear tStrike fpOrigin framesBefore_tStrike tOff framesAfter_tOff framesOnFP
     end %Trials
 
 
@@ -616,7 +611,7 @@ for s = 1:length(subjectFolders)
 
     movefile(dirOutput_Figures,[fileparts(baseFolderPath), '\InputData\', subjectFolders(s).name]); %EMG Figures
     
-    clear results chosenFP classifications imds labels
+    clear results chosenFP classifications imds labels motionDirection
 end %Subjects
 
 movefile(excelFilePath,[fileparts(baseFolderPath),'\InputData\']);
