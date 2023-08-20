@@ -54,9 +54,18 @@ addpath(genpath([pwd, '\templatesXML'])); %Path to template .xml used in this sc
 %Get lab orientation, subjects, instumented legs, important markers, foot markers, and EMG info from .xml
 prefXMLRead.Str2Num = 'never';
 tree = xml_read(xmlTemplate, prefXMLRead);
-% -> add user inputable path to template .xml (+same with GUI)
 
-% labOrientation = tree.Laboratory.CoordinateSystemOrientation; %Not used yet
+labOrientation = tree.Laboratory.CoordinateSystemOrientation;
+if strcmp(labOrientation(1), 'X')
+    labMotionAxis = 1;
+elseif strcmp(labOrientation(1), 'Y')
+    labMotionAxis = 2; 
+elseif strcmp(labOrientation(1), 'Z')
+    labMotionAxis = 3;   
+else
+    error(['ERROR: Lab CoordinateSystemOrientation not specified in ' xmlTemplate]); 
+end
+
 subjectInstrumented(:,1) = split(tree.Subjects.SubjectCodes);
 subjectInstrumented(:,2) = split(tree.Subjects.InstrumentedLeg);
 
@@ -65,6 +74,9 @@ importantMarkersDynamic = split(tree.MarkersProtocol.MarkersSetDynamicTrials);
 
 footMarkersRight = split(tree.MarkersProtocol.RightFootMarkers);
 footMarkersLeft = split(tree.MarkersProtocol.LeftFootMarkers);
+pelvisMarkers = split(tree.MarkersProtocol.PelvisMarkers);
+pelvisMarkerFront = pelvisMarkers{1};
+pelvisMarkerBack = pelvisMarkers{2};
 
 emgNamesOriginal = split(tree.EMGs.OriginalChannels);
 emgNamesAdjusted = split(tree.EMGs.RenamedChannels);
@@ -123,7 +135,6 @@ for s = 1:length(subjectFolders)
     for t = 1:length(currentTrials)       
         h = btkReadAcquisition([currentTrials(t).folder, '\', currentTrials(t).name]);
         disp(['% ', currentTrials(t).name, ' %']);
-%         h = btkReadAcquisition('E:\Melbourne ACLR Dataset\_Sorted Gait Data\__Outlier examples\FP1 Artefact - CTRL04 Forward hop 95.c3d');
               
         emgNamesOriginal = split(tree.EMGs.OriginalChannels); %Calling it again, but it's needed if overwriteEMGNames is enabled, don't see a better solution
 
@@ -504,12 +515,39 @@ for s = 1:length(subjectFolders)
                 chosenFP{t,4} = 'Execution';
             end
         end %runEMGClass
+
+        %% 5) Find Motion Direction
+        %Delete zero rows in pelvis markers
+        currentData = [markers.(pelvisMarkerFront), markers.(pelvisMarkerBack)];
+        currentData(~all(currentData,2), :) = []; %Both markers need to be present at the same time       
+        currentDataFront = currentData(:, 1:3);
+        currentDataBack = currentData(:, 4:6);
+        
+        motionDirectionMatrix = currentDataFront - currentDataBack;
+        
+        [~,idx_maxVal] = max(abs(motionDirectionMatrix),[],2);
+        pelvisMotionAxis = round(mean(idx_maxVal));
+        pelvisMotionSign = round(mean(sign(motionDirectionMatrix(:,pelvisMotionAxis))));
+
+        if pelvisMotionAxis == labMotionAxis
+            if pelvisMotionSign > 0
+                motionDirection{t,1} = 'forward';
+            elseif pelvisMotionSign < 0
+                motionDirection{t,1} = 'backward';
+            end
+        else %Assuming participants aren't walking off into space (upwards direction)
+            if pelvisMotionSign > 0
+                motionDirection{t,1} = '90left';
+            elseif pelvisMotionSign < 0
+                motionDirection{t,1} = '90right';
+            end
+        end %Motion direction
         
         btkCloseAcquisition(h); %Close trial   
     end %Trials
 
 
-    %% 5) Export Results To Excel    
+    %% 6) Export Results To Excel    
     %Create headers for each FP
     for fp_res = 1:numFP
         fpResultsHeader{1,fp_res} = {['Stance on FP', num2str(fp_res)],'Footstrike Frame', 'Footoff Frame', 'Frames Before Footstrike',...
@@ -519,10 +557,10 @@ for s = 1:length(subjectFolders)
     %Add all headers to results cell array   
     if runEMGClass
         results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}], [emgNamesOriginal', {'Percentage Usable EMG'}],...
-            {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, classifications, chosenFP]];
+            {'Motion Direction'}, {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, classifications, motionDirection, chosenFP]];
     else
         results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}],...
-            {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, chosenFP]];
+            {'Motion Direction'}, {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, motionDirection, chosenFP]];
     end
 
     %Tally trial usability
@@ -573,7 +611,7 @@ for s = 1:length(subjectFolders)
     xlswrite(excelFilePath,results,newSheetName);
 
 
-    %% 6) Move Usable Participant Data Into Unified InputData Folder
+    %% 7) Move Usable Participant Data Into Unified InputData Folder
     movefile(c3dChosenFilesPath,fileparts(baseFolderPath)); %InputData
 
     movefile(dirOutput_Figures,[fileparts(baseFolderPath), '\InputData\', subjectFolders(s).name]); %EMG Figures
@@ -584,7 +622,7 @@ end %Subjects
 movefile(excelFilePath,[fileparts(baseFolderPath),'\InputData\']);
 
 
-%% 7) Close and Move Diary
+%% 8) Close and Move Diary
 userview = memory; mem5 = userview.MemUsedMATLAB/1024^3;
 t1 = toc;
 disp(['%% Automatic C3D Checker ran successfully in ' num2str(floor(t1/60)) ' minutes and ' num2str(rem(t1,60))...

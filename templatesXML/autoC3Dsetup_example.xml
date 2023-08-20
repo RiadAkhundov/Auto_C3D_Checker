@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<auto_C3D_checker_input xmlns:xsi="http://www.w3.org/2001/XMLSchema">	  
+<auto_C3D_checker_input xmlns:xsi="http://www.w3.org/2001/XMLSchema">
+   <Laboratory>
+      <CoordinateSystemOrientation>XZY</CoordinateSystemOrientation>
+   </Laboratory>
+   
    <Subjects>
 	  <SubjectCodes>ACLR11 ACLR28 CTRL09</SubjectCodes>
       <InstrumentedLeg>L R L</InstrumentedLeg>
@@ -9,6 +13,7 @@
       <MarkersSetDynamicTrials>C7 CLAV T10 RPSI LPSI RASI LASI rthigh_2 rthigh_4 rthigh_primary_axis_7 rthigh_2nd_axis_9 lthigh_2 lthigh_4 lthigh_primary_axis_7 lthigh_2nd_axis_9 rshank_origin_1 rshank_4 rshank_primary_axis_7 rshank_2nd_axis_9 lshank_origin_1 lshank_4 lshank_primary_axis_7 lshank_2nd_axis_9 RCAL RMT1 RMT5 LCAL LMT1 LMT5</MarkersSetDynamicTrials>
 	  <RightFootMarkers>RCAL RMT1 RMT5</RightFootMarkers>
 	  <LeftFootMarkers>LCAL LMT1 LMT5</LeftFootMarkers>
+	  <PelvisMarkers>RASI RPSI</PelvisMarkers>
    </MarkersProtocol>
    
    <EMGs>
