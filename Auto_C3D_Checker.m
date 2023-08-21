@@ -10,16 +10,14 @@
 %2) Deep Learning Toolbox (introduced in version 2018a)
 %3) Parallel Computing Toolbox (also called Distributed Computing Toolbox)
 
-%Version: v0.23.08.20
+%Version: v0.23.08.21
 
 %%%ToDo:
-%!!! include naming of fp channels in xml !!!
-%!!! make GUI !!!
+%!!! make GUI? !!!
 
 %%%ToDo Later:
 % Combine with EMG class to excitation script 
 % Add Manual ReNaming script
-
 
 
 clc; clearvars; close all;
@@ -42,7 +40,7 @@ diary on
 
 %User inputs - Paths to base folder, template .xml, etc.
 baseFolderPath = [pwd, '\Sample Data\Base Folder']; %Base folder containing subjects subfolders with .c3d files
-xmlTemplate = [pwd, '\templatesXML\autoC3Dsetup_example.xml']; %.xml containing acquisition information
+xmlTemplate = [pwd, '\templatesXML\autoC3Dsetup_example.xml']; %.xml containing script settings
 overwriteEMGNames = true;
 runEMGClass = true;
 %!!! add user inputable paths with GUI
@@ -74,8 +72,8 @@ importantMarkersDynamic = split(tree.MarkersProtocol.MarkersSetDynamicTrials);
 
 footMarkersRight = split(tree.MarkersProtocol.RightFootMarkers);
 footMarkersLeft = split(tree.MarkersProtocol.LeftFootMarkers);
-pelvisMarkerFront = split(tree.MarkersProtocol.AnteriorPelvisMarker);
-pelvisMarkerBack = split(tree.MarkersProtocol.PosteriorPelvisMarker);
+pelvisMarkersFront = split(tree.MarkersProtocol.AnteriorPelvisMarkers);
+pelvisMarkersBack = split(tree.MarkersProtocol.PosteriorPelvisMarkers);
 
 emgNamesOriginal = split(tree.EMGs.OriginalChannels);
 emgNamesAdjusted = split(tree.EMGs.RenamedChannels);
@@ -376,6 +374,12 @@ for s = 1:length(subjectFolders)
             chosenFP{t,4} = 'Unusable'; %Not instrumented leg
             countUnusable = countUnusable +1;
         end
+
+        %Copy static trial to calibration & execution folders
+        if  contains(upper(currentTrials(t).name),'STATIC')
+            copyfile([subjectFolders(s).folder, '\', subjectFolders(s).name, '\', currentTrials(t).name], calibrationFilesPath);
+            copyfile([subjectFolders(s).folder, '\', subjectFolders(s).name, '\', currentTrials(t).name], executionFilesPath);
+        end
                 
 
         %% 4) Make EMG Figures For Calibration/Execution Trials & Classify EMG             
@@ -512,14 +516,24 @@ for s = 1:length(subjectFolders)
 
         %% 5) Find Motion Direction
         %Delete zero rows in pelvis markers
-        currentData = [markers.(pelvisMarkerFront{1}), markers.(pelvisMarkerBack{1})];
-        currentData(~all(currentData,2), :) = []; %Both markers need to be present at the same time       
-        currentDataFront = currentData(:, 1:3);
-        currentDataBack = currentData(:, 4:6);
-        
-        motionDirectionMatrix = currentDataFront - currentDataBack;
-        
-        [~,idx_maxVal] = max(abs(motionDirectionMatrix),[],2);
+        if length(pelvisMarkersBack) == 2
+            currentData = [markers.(pelvisMarkersFront{1}), markers.(pelvisMarkersFront{2}), markers.(pelvisMarkersBack{1}), markers.(pelvisMarkersBack{2})];
+            currentData(~all(currentData,2), :) = []; %Both markers need to be present at the same time
+           
+            currentDataFrontMid = (currentData(:, 1:3) + currentData(:, 4:6))/2; %Mid of frontal markers
+            currentDataBackMid = (currentData(:, 7:9) + currentData(:, 10:12))/2; %Mid of back markers
+
+        elseif length(pelvisMarkersBack) == 1 %Case for single back marker (hopefully in/near the middle of body)
+            currentData = [markers.(pelvisMarkersFront{1}), markers.(pelvisMarkersFront{2}), markers.(pelvisMarkersBack{1})];
+            currentData(~all(currentData,2), :) = [];
+            
+            currentDataFrontMid = (currentData(:, 1:3) + currentData(:, 4:6))/2;
+            currentDataBackMid = currentData(:, 7:9); %Single back marker
+        end
+
+        motionDirectionMatrix = currentDataFrontMid - currentDataBackMid;
+
+        [~,idx_maxVal] = max(abs(motionDirectionMatrix),[],2);        
         [~, pelvisMotionAxis] = max([sum(idx_maxVal==1), sum(idx_maxVal==2), sum(idx_maxVal==3)]);
         pelvisMotionSign = round(mean(sign(motionDirectionMatrix(:,pelvisMotionAxis))));
 
@@ -608,6 +622,7 @@ for s = 1:length(subjectFolders)
 
     %% 7) Move Usable Participant Data Into Unified InputData Folder
     movefile(c3dChosenFilesPath,fileparts(baseFolderPath)); %InputData
+    % dir
 
     movefile(dirOutput_Figures,[fileparts(baseFolderPath), '\InputData\', subjectFolders(s).name]); %EMG Figures
     

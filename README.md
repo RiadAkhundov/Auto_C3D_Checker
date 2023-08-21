@@ -8,6 +8,7 @@ This is a tool for automatically evaluating the quality of a biomechanical trial
 This tool evaluates the .c3d in terms of its appropriateness for neuromusculoskeletal (from here on referred to as NMS) modelling. Specifically, this tool automatically determines:
 
 1.	Whether Markers crucial for tracking are present throughout the trial
+  - If yes, what is the motion direction throughout the trial
 
 2.	If the instrumented leg hits a FP during the trial 
   - If yes, which FP is hit and does the foot/both feet hit this FP fully or only partially
