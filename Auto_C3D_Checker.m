@@ -10,10 +10,10 @@
 %2) Deep Learning Toolbox (introduced in version 2018a)
 %3) Parallel Computing Toolbox (also called Distributed Computing Toolbox)
 
-%Version: v0.23.08.21
+%Version: v0.23.08.25
 
 %%%ToDo:
-%!!! make GUI? !!!
+% *) Climb a mountain
 
 %%%ToDo Later:
 % Combine with EMG class to excitation script 
@@ -129,6 +129,7 @@ for s = 1:length(subjectFolders)
     
     currentTrials = dir([subjectFolders(s).folder, '\', subjectFolders(s).name, '\*.c3d']); %Get subject trials
     classifications = cell(length(currentTrials), length(emgNamesOriginal)); %Preallocating classifications cell array (one of the few instances where preallocation is actually useful/required) 
+    maxLinEnvEMG = cell(length(currentTrials), length(emgNamesOriginal));
 
     for t = 1:length(currentTrials)       
         h = btkReadAcquisition([currentTrials(t).folder, '\', currentTrials(t).name]);
@@ -207,7 +208,7 @@ for s = 1:length(subjectFolders)
                 
                 %Frames after footoff (if not on FP at the end of trial)
                 if isempty(tOff_fpFrames{fp})
-                    tOff{fp} = [];
+                    tOff{fp} = lastFrame-(requiredExtraFrames+1);
                     framesAfter_tOff{fp} = 'On FP';
                     framesOnFP{fp} = lastFrame-tStrike{fp}-1;
                 else
@@ -380,6 +381,21 @@ for s = 1:length(subjectFolders)
             copyfile([subjectFolders(s).folder, '\', subjectFolders(s).name, '\', currentTrials(t).name], calibrationFilesPath);
             copyfile([subjectFolders(s).folder, '\', subjectFolders(s).name, '\', currentTrials(t).name], executionFilesPath);
         end
+
+        %Calculate max EMG envelopes for all trials
+        for i = 1:length(emgNamesOriginal)
+            if isfield(analogs, (emgNamesOriginal{i}))
+                if any(analogs.(emgNamesOriginal{i}))                    
+                    trialEMG = analogs.(emgNamesOriginal{i}); %Raw EMG data               
+    
+                    %Raw EMG envelope (no offset correction and/or normalization)
+                    trialFiltEMG = ZeroLagButtFiltfilt((1/analogRate), [30,300], 2, 'bp', trialEMG);
+                    trialFiltEMG = abs(trialFiltEMG);
+                    trialFiltEMG = ZeroLagButtFiltfilt((1/analogRate), 18, 2, 'lp', trialFiltEMG); 
+                    maxLinEnvEMG{t,i} = max(trialFiltEMG);
+                end
+            end
+        end
                 
 
         %% 4) Make EMG Figures For Calibration/Execution Trials & Classify EMG             
@@ -387,7 +403,7 @@ for s = 1:length(subjectFolders)
             for i = 1:length(emgNamesOriginal)
                 if isfield(analogs, (emgNamesOriginal{i}))
                     if any(analogs.(emgNamesOriginal{i}))
-                        %Data for images
+                        %EMG data for images
                         currentEMG = analogs.(emgNamesOriginal{i}) - mean(analogs.(emgNamesOriginal{i})); %Remove zero offset
                         currentEMG = currentEMG ./ max(abs(currentEMG)); %Self-Normalize                
         
@@ -407,8 +423,7 @@ for s = 1:length(subjectFolders)
                         fft_power_50 = obw(fft_power,fft_range,[],50);
                         fft_power_75 = obw(fft_power,fft_range,[],75);
                         fft_power_99 = obw(fft_power,fft_range); %Estimate 99% occupied bandwidth of the power spectral density
-    
-    
+
                         % Plots
                         %3x Combo Plot      
                         f = figure('Color', [1 1 1], 'Visible', 'off'); 
@@ -565,8 +580,8 @@ for s = 1:length(subjectFolders)
     
     %Add all headers to results cell array   
     if runEMGClass
-        results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}], [emgNamesOriginal', {'Percentage Usable EMG'}],...
-            {'Motion Direction'}, {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, classifications, motionDirection, chosenFP]];
+        results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}], [emgNamesOriginal', {'Percentage Usable EMG'}, strcat({'Max_'}, emgNamesOriginal')],...
+            {'Motion Direction'}, {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, classifications, maxLinEnvEMG, motionDirection, chosenFP]];
     else
         results = [[{'Trials','Instrumented Leg', 'Instrumented Leg Hit FP?'}, [fpResultsHeader{:}],...
             {'Motion Direction'}, {'Chosen FP','Start Padded?', 'End Padded?', 'Trial Usability'}]; [results, motionDirection, chosenFP]];
@@ -626,7 +641,7 @@ for s = 1:length(subjectFolders)
 
     movefile(dirOutput_Figures,[fileparts(baseFolderPath), '\InputData\', subjectFolders(s).name]); %EMG Figures
     
-    clear results chosenFP classifications imds labels motionDirection
+    clear results chosenFP classifications imds labels motionDirection maxLinEnvEMG
 end %Subjects
 
 movefile(excelFilePath,[fileparts(baseFolderPath),'\InputData\']);

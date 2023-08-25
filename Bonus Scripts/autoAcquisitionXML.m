@@ -10,7 +10,7 @@
 %1) MATLAB 2019b or newer (made with MATLAB version 2023a)
 %2) Output from the Auto_C3D_Checker for the same dataset
 
-%Version: v0.23.08.21
+%Version: v0.23.08.25
 
 %%%ToDo:
 % *) Dance under the stars
@@ -28,12 +28,6 @@ resultsExcelPath = [resultsExcelPath.folder, '\', resultsExcelPath.name];
 templateXMLPath = [pwd, '\..\templatesXML\autoAcquisitionTemplate_example.xml'];
 autoC3DxmlTemplate = [pwd, '\..\templatesXML\autoC3Dsetup_example.xml'];
 
-%Subject ID & emgSide (L or R) taken from autoC3Dsetup
-prefXMLRead.Str2Num = 'never';
-treeAutoC3D = xml_read(autoC3DxmlTemplate, prefXMLRead);
-subjectEmg(:,1) = split(treeAutoC3D.Subjects.SubjectCodes);
-subjectEmg(:,2) = split(treeAutoC3D.Subjects.InstrumentedLeg);
-
 %Height in m and mass in kg (needs to be in identical order to subjectEmg)
 heightMass=[...
 1.685, 62.5; %ACLR11
@@ -43,16 +37,18 @@ heightMass=[...
 
 
 %% 2) Make acquisition.xml From The Above Manual Inputs & Auto C3D Checker Results Excel
-templateXMLTree = xml_read(templateXMLPath, prefXMLRead);
-
-%Subject folders
-subjects = subjectEmg(:,1);
+%Subject ID & emgSide (L or R) taken from autoC3Dsetup
+prefXMLRead.Str2Num = 'never';
+treeAutoC3D = xml_read(autoC3DxmlTemplate, prefXMLRead);
+subjects = split(treeAutoC3D.Subjects.SubjectCodes);
+subjectEMG = split(treeAutoC3D.Subjects.InstrumentedLeg);
 nSubjects = length(subjects);
+
+templateXMLTree = xml_read(templateXMLPath, prefXMLRead);
 
 for s=1:nSubjects
     disp(['%% ', subjects{s}, ' %%']);
     currentDirInput = [inputDataPath, '\', subjects{s}, '\'];
-    % dirElabSubj{s}=[dirElab subjects{s} '\'];
     
     %Find all sessions in this participant folder
     currentDirInput_Sub = dir(currentDirInput);
@@ -74,9 +70,9 @@ for s=1:nSubjects
         currentXMLTree.Subject.Code = subjects{s};
         currentXMLTree.Subject.Weight = heightMass(s,2);
         currentXMLTree.Subject.Height = heightMass(s,1);
-        if strcmp(subjectEmg{s,2}, 'L')
+        if strcmp(subjectEMG{s}, 'L')
             currentXMLTree.EMGs.Protocol.InstrumentedLeg = 'Left';
-        elseif strcmp(subjectEmg{s,2}, 'R')
+        elseif strcmp(subjectEMG{s}, 'R')
             currentXMLTree.EMGs.Protocol.InstrumentedLeg = 'Right';
         else
             error(['ERROR: Specify EMG leg for ' subjects{s}]);
