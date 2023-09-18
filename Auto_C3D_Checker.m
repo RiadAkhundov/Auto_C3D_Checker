@@ -10,7 +10,7 @@
 %2) Deep Learning Toolbox (introduced in version 2018a)
 %3) Parallel Computing Toolbox (also called Distributed Computing Toolbox)
 
-%Version: v0.23.08.25
+%Version: v0.23.09.18
 
 %%%ToDo:
 % *) Climb a mountain
@@ -42,6 +42,9 @@ diary on
 baseFolderPath = [pwd, '\Sample Data\Base Folder']; %Base folder containing subjects subfolders with .c3d files
 xmlTemplate = [pwd, '\templatesXML\autoC3Dsetup_example.xml']; %.xml containing script settings
 overwriteEMGNames = true;
+% overwriteEMGNames = false;
+% overwriteFPNames = true;
+overwriteFPNames = false;
 runEMGClass = true;
 %!!! add user inputable paths with GUI
 
@@ -78,6 +81,9 @@ pelvisMarkersBack = split(tree.MarkersProtocol.PosteriorPelvisMarkers);
 emgNamesOriginal = split(tree.EMGs.OriginalChannels);
 emgNamesAdjusted = split(tree.EMGs.RenamedChannels);
 emgDelay = str2double(tree.EMGs.EMGDelay); %0.2 sec is the MOtoNMS default value for electromechanical + hardware delay
+
+fpNamesOriginal = split(tree.FPs.OriginalChannels);
+fpNamesAdjusted = split(tree.FPs.RenamedChannels);
 
 thresholdFP = str2double(tree.ScriptSettings.thresholdFP);
 analysisWindow = str2double(tree.ScriptSettings.analysisWindow);
@@ -152,6 +158,17 @@ for s = 1:length(subjectFolders)
         %EMG data
         [analogs, analogsInfo] = btkGetAnalogs(h);
         analogRate = analogsInfo.frequency; 
+
+        %Adjust FP names in .c3d 
+        if overwriteFPNames 
+            for fp1 = 1:length(forceplates)
+                for e = 1:length(fpNamesOriginal)
+                    if isfield(analogs,([fpNamesAdjusted{e}, num2str(fp1)])) == 1
+                        [analogs, ~] = btkSetAnalogLabel(h, [fpNamesOriginal{e}, num2str(fp1)], [fpNamesAdjusted{e}, num2str(fp1)]);
+                    end
+                end
+            end
+        end
     
         %Adjust EMG names in .c3d 
         if overwriteEMGNames    
@@ -637,9 +654,10 @@ for s = 1:length(subjectFolders)
 
     %% 7) Move Usable Participant Data Into Unified InputData Folder
     movefile(c3dChosenFilesPath,fileparts(baseFolderPath)); %InputData
-    % dir
 
-    movefile(dirOutput_Figures,[fileparts(baseFolderPath), '\InputData\', subjectFolders(s).name]); %EMG Figures
+    if runEMGClass
+        movefile(dirOutput_Figures,[fileparts(baseFolderPath), '\InputData\', subjectFolders(s).name]); %EMG Figures
+    end
     
     clear results chosenFP classifications imds labels motionDirection maxLinEnvEMG
 end %Subjects

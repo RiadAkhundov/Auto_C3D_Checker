@@ -23,6 +23,11 @@
 	  <EMGDelay>0.2</EMGDelay><!--0.2 sec is the MOtoNMS default value for electromechanical + hardware delay.-->
    </EMGs>
    
+   <FPs>
+      <OriginalChannels>Force.Fx Force.Fy Force.Fz Moment.Mx Moment.My Moment.Mz</OriginalChannels>
+	  <RenamedChannels>Force_Fx Force_Fy Force_Fz Moment_Mx Moment_My Moment_Mz</RenamedChannels><!--Use these in case you want to rename your FP channels in the c3d.-->
+   </FPs>
+   
    <ScriptSettings>
       <thresholdFP>20</thresholdFP><!--20N FP threshold, only change if encountering errors.-->
 	  <analysisWindow>10</analysisWindow><!--Extra frames for analysis window.-->

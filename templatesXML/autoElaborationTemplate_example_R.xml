@@ -33,6 +33,7 @@
       </Manual>
    </WindowSelectionProcedure>
    <Markers>RASI LASI RPSI LPSI</Markers>
+   <EMGMaxTrials></EMGMaxTrials>
    <EMGsSelection>
       <EMGSet>Generic_R</EMGSet>
       <EMGs>

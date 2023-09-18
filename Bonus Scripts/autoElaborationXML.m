@@ -83,6 +83,7 @@ for s=1:nSubjects
         %Set trial names
         trialsDynamicNames = strjoin(trialsDynamic);
         currentXMLTree.Trials = trialsDynamicNames;
+        % currentXMLTree.EMGMaxTrials = trialsDynamicNames; %Only use if no MVC trials present
 
         %Set filtering parameters and analysis windows
         for fl = 1:length(trialsDynamic)
